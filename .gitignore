@@ -33,3 +33,6 @@ lerna-debug.log
 
 # Yarn lock file
 yarn.lock
+
+# TypeScript generated files
+packages/init/*.js

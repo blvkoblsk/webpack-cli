@@ -1,13 +1,13 @@
 "use strict";
 
-const path = require("path");
-const j = require("jscodeshift");
-const chalk = require("chalk");
-const pEachSeries = require("p-each-series");
+import path from "path";
+import j from "jscodeshift";
+import chalk from "chalk";
+import pEachSeries from "p-each-series";
 
-const runPrettier = require("@webpack-cli/utils/run-prettier");
-const astTransform = require("@webpack-cli/utils/recursive-parser");
-const propTypes = require("@webpack-cli/utils/prop-types");
+import runPrettier from "@webpack-cli/utils/run-prettier";
+import astTransform from "@webpack-cli/utils/recursive-parser";
+import propTypes from "@webpack-cli/utils/prop-types";
 
 /**
  *
@@ -16,12 +16,12 @@ const propTypes = require("@webpack-cli/utils/prop-types");
  *
  * @param	{Object} transformObject 	- An Object with all transformations
  * @param	{Object} config 			- Configuration to transform
- * @returns {Object} - An Object with the transformations to be run
+ * @returns {Array} - An array with the transformations to be run
  */
 
-function mapOptionsToTransform(config) {
-	return Object.keys(config.webpackOptions).filter(k => propTypes.has(k));
-}
+const mapOptionsToTransform = (config): string[] =>
+	Object.keys(config.webpackOptions)
+		.filter((key: string): boolean => propTypes.has(key))
 
 /**
  *
@@ -33,37 +33,38 @@ function mapOptionsToTransform(config) {
  * and writes the file
  */
 
-module.exports = function runTransform(webpackProperties, action) {
+export default function runTransform(webpackProperties, action: string) {
 	// webpackOptions.name sent to nameTransform if match
-	const webpackConfig = Object.keys(webpackProperties).filter(p => {
-		return p !== "configFile" && p !== "configPath";
-	});
-	const initActionNotDefined = action && action !== "init" ? true : false;
+	const webpackConfig: string[] =
+		Object
+			.keys(webpackProperties)
+			.filter((p: string): boolean => p !== "configFile" && p !== "configPath");
 
-	webpackConfig.forEach(scaffoldPiece => {
+	const initActionNotDefined: boolean = (action && action !== "init") || false;
+
+	webpackConfig.forEach((scaffoldPiece: string): Promise<void> => {
 		const config = webpackProperties[scaffoldPiece];
-		const transformations = mapOptionsToTransform(config);
+		const transformations: string[] = mapOptionsToTransform(config);
 		const ast = j(
 			initActionNotDefined
 				? webpackProperties.configFile
 				: "module.exports = {}"
 		);
-		const transformAction = action || null;
+		const transformAction: string | null = action || null;
 
-		return pEachSeries(transformations, f => {
+		return pEachSeries(transformations, (f: string) => {
 			return astTransform(j, ast, config.webpackOptions[f], transformAction, f);
 		})
 			.then(_ => {
-				let configurationName;
-				if (!config.configName) {
-					configurationName = "webpack.config.js";
-				} else {
+				let configurationName: string = "webpack.config.js";
+				if (config.configName) {
 					configurationName = "webpack." + config.configName + ".js";
 				}
 
-				const outputPath = initActionNotDefined
+				const outputPath: string = initActionNotDefined
 					? webpackProperties.configPath
 					: path.join(process.cwd(), configurationName);
+
 				const source = ast.toSource({
 					quote: "single"
 				});
@@ -74,6 +75,7 @@ module.exports = function runTransform(webpackProperties, action) {
 				console.error(err.message ? err.message : err);
 			});
 	});
+
 	if (initActionNotDefined && webpackProperties.config.item) {
 		process.stdout.write(
 			"\n" +
