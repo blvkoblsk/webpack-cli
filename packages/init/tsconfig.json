@@ -1,14 +1,3 @@
 {
-  "compilerOptions": {
-    // Targeted standard
-    "target": "es6",
-    // Module system
-    "module": "commonjs",
-    "moduleResolution": "node",
-    "allowJs": true,
-    "allowSyntheticDefaultImports": true,
-    // Strictness
-    "skipLibCheck": true,
-    // "strict": true,
-  },
+  "extends": "../../tsconfig.base.json",
 }
